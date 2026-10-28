@@ -98,6 +98,7 @@ add_subdirectory(mac)
 add_subdirectory(math)
 add_subdirectory(utility)
 add_subdirectory(waveform)
+add_subdirectory(filter/design)
 #filter and window come back when the own filter design code replaces spuce
 
 ########################################################################
