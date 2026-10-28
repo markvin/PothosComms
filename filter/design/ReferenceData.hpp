@@ -1262,7 +1262,7 @@ inline constexpr std::complex<double> d1185[] = {{1, 0}, {7, 3}, {23, 11}, {44, 
 inline constexpr double d1186[] = {1, 7, 23, 44, 57, 56, 48, 44, 47, 51, 51, 48, 47, 49, 50, 49, 48, 48, 49, 50, 50, 49, 48, 48, 49, 50, 50, 49, 48, 48, 49, 50, 50, 49, 48, 48, 49, 50, 50, 49, 48, 48, 49, 50, 50, 49, 48, 48, 49, 50, 50, 49, 48, 48, 49, 50, 50, 49, 48, 48, 49, 50, 50, 49};
 } //namespace Detail
 
-inline constexpr std::array windowCases{
+inline constexpr std::array<WindowCase, 84> windowCases{{
     WindowCase{"rectangular", 1, 4, Detail::d0},
     WindowCase{"rectangular", 2, 4, Detail::d1},
     WindowCase{"rectangular", 7, 4, Detail::d2},
@@ -1347,9 +1347,9 @@ inline constexpr std::array windowCases{
     WindowCase{"foo", 8, 4, Detail::d81},
     WindowCase{"foo", 63, 4, Detail::d82},
     WindowCase{"foo", 64, 4, Detail::d83},
-};
+}};
 
-inline constexpr std::array firCases{
+inline constexpr std::array<FIRCase, 435> firCases{{
     FIRCase{"sinc", "LOW_PASS", false, 15, 0.10000000000000001, 0.20000000000000001, 0.10000000000000001, 100, Detail::d84, {}, ""},
     FIRCase{"sinc", "LOW_PASS", false, 15, 0.050000000000000003, 0.40000000000000002, 0.10000000000000001, 100, Detail::d85, {}, ""},
     FIRCase{"sinc", "LOW_PASS", false, 16, 0.10000000000000001, 0.20000000000000001, 0.10000000000000001, 100, Detail::d86, {}, ""},
@@ -1785,9 +1785,9 @@ inline constexpr std::array firCases{
     FIRCase{"sinc", "FOO", false, 15, 0.10000000000000001, 0.20000000000000001, 0.10000000000000001, 100, Detail::d477, {}, ""},
     FIRCase{"remez", "FOO", false, 15, 0.10000000000000001, 0.20000000000000001, 0.10000000000000001, 100, Detail::d478, {}, ""},
     FIRCase{"sinc", "FOO", true, 15, 0.10000000000000001, 0.20000000000000001, 0.10000000000000001, 100, {}, {}, "Unsupported band type in transform_complex_fir :FOO"},
-};
+}};
 
-inline constexpr std::array remezEstimateCases{
+inline constexpr std::array<RemezEstimateCase, 12> remezEstimateCases{{
     RemezEstimateCase{0.01, 0.10000000000000001, 40, 63, 191, 3, 0.029074868501520055, 1.1579454259898592},
     RemezEstimateCase{0.01, 0.10000000000000001, 80, 63, 310, 3, 0.049238545109180597, 115.79454259898591},
     RemezEstimateCase{0.01, 1, 40, 63, 120, 21, 0.45000000000000001, 12.201845430196334},
@@ -1800,9 +1800,9 @@ inline constexpr std::array remezEstimateCases{
     RemezEstimateCase{0.10000000000000001, 0.10000000000000001, 80, 63, 31, 189, 0.049238545109180597, 115.79454259898591},
     RemezEstimateCase{0.10000000000000001, 1, 40, 63, 12, 232, 0.45000000000000001, 12.201845430196334},
     RemezEstimateCase{0.10000000000000001, 1, 80, 63, 23, 232, 0.035894899384592657, 1220.1845430196333},
-};
+}};
 
-inline constexpr std::array iirCases{
+inline constexpr std::array<IIRCase, 258> iirCases{{
     IIRCase{"butterworth", "LOW_PASS", 1, 0.050000000000000003, 0.10000000000000001, 60, 0.25, Detail::d480, Detail::d479, false},
     IIRCase{"butterworth", "LOW_PASS", 1, 0.20000000000000001, 0.10000000000000001, 60, 0.25, Detail::d482, Detail::d481, false},
     IIRCase{"butterworth", "LOW_PASS", 2, 0.050000000000000003, 0.10000000000000001, 60, 0.25, Detail::d484, Detail::d483, false},
@@ -2061,9 +2061,9 @@ inline constexpr std::array iirCases{
     IIRCase{"elliptic", "BAND_STOP", 8, 0.20000000000000001, 0.10000000000000001, 60, 0.25, Detail::d990, Detail::d989, false},
     IIRCase{"foo", "LOW_PASS", 4, 0.20000000000000001, 0.10000000000000001, 60, 0.25, Detail::d992, Detail::d991, true},
     IIRCase{"butterworth", "FOO", 4, 0.20000000000000001, 0.10000000000000001, 60, 0.25, Detail::d994, Detail::d993, true},
-};
+}};
 
-inline constexpr std::array iirRunCases{
+inline constexpr std::array<IIRRunCase, 96> iirRunCases{{
     IIRRunCase{3, "impulse", "double", Detail::d996, Detail::d995},
     IIRRunCase{3, "impulse", "float", Detail::d998, Detail::d997},
     IIRRunCase{3, "impulse", "int64", Detail::d1000, Detail::d999},
@@ -2160,6 +2160,6 @@ inline constexpr std::array iirRunCases{
     IIRRunCase{201, "step", "int32", Detail::d1182, Detail::d1181},
     IIRRunCase{201, "step", "int16", Detail::d1184, Detail::d1183},
     IIRRunCase{201, "step", "int8", Detail::d1186, Detail::d1185},
-};
+}};
 
 } //namespace PothosComms::FilterDesign::Reference

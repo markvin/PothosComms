@@ -341,11 +341,13 @@ void makeIIRRunCases()
     }
 }
 
-void writeCases(const std::string &name, const std::vector<std::string> &cases)
+//the type and the size are explicit: the deduction guide of std::array
+//uses a fold expression over all items, and Clang limits its depth (256)
+void writeCases(const std::string &type, const std::string &name, const std::vector<std::string> &cases)
 {
-    body << "\ninline constexpr std::array " << name << "{\n";
+    body << "\ninline constexpr std::array<" << type << ", " << cases.size() << "> " << name << "{{\n";
     for (const auto &c : cases) body << c;
-    body << "};\n";
+    body << "}};\n";
 }
 
 } //namespace
@@ -438,11 +440,11 @@ inline constexpr double inf = std::numeric_limits<double>::infinity();
     const auto writeAll = [] {
         std::ostringstream data;
         data.swap(body);
-        writeCases("windowCases", windowCases);
-        writeCases("firCases", firCases);
-        writeCases("remezEstimateCases", remezEstimateCases);
-        writeCases("iirCases", iirCases);
-        writeCases("iirRunCases", iirRunCases);
+        writeCases("WindowCase", "windowCases", windowCases);
+        writeCases("FIRCase", "firCases", firCases);
+        writeCases("RemezEstimateCase", "remezEstimateCases", remezEstimateCases);
+        writeCases("IIRCase", "iirCases", iirCases);
+        writeCases("IIRRunCase", "iirRunCases", iirRunCases);
         std::cout << data.str() << "} //namespace Detail\n" << body.str();
     };
     writeAll();
