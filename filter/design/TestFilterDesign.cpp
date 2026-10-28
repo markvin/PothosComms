@@ -7,6 +7,9 @@
 //   formulas give the same values, except for the order of operations;
 // - 1e-6 for Remez and the Remez estimates: the iterative exchange
 //   algorithm can stop at a slightly different point;
+// - 1e-6 for maxflat: its sums cancel. With 63 taps and a bandwidth of
+//   0.45 (32 poles), the double result has an error of approximately 3e-8
+//   (measured against long double), and it depends on the C library;
 // - 1e-6 for the IIR designs: the elliptic functions and the pole/zero
 //   transforms add more rounding steps;
 // - 1e-9 for the IIR filter runs: the taps come from the reference data,
@@ -114,7 +117,7 @@ POTHOS_TEST_BLOCK("/comms/tests", test_filter_design_fir)
     {
         const auto label = std::format("{} {} {} taps fl {} fu {} alpha {} weight {}: ",
             c.type, c.band, c.numTaps, c.fl, c.fu, c.alpha, c.weight);
-        const double tol = (c.type == "remez") ? 1e-6 : 1e-9;
+        const double tol = (c.type == "remez" or c.type == "maxflat") ? 1e-6 : 1e-9;
         std::vector<double> taps;
         std::vector<std::complex<double>> complexTaps;
         const auto error = errorOf([&]{
