@@ -5,6 +5,7 @@
 #include <Pothos/Util/XSIMDCopy.hpp>
 
 #include <cmath>
+#include <version>
 
 // Actually enforce EnableIf*
 #ifdef _MSC_VER
@@ -20,7 +21,8 @@ namespace detail
     {
         for (size_t elem = 0; elem < len; ++elem)
         {
-#if __cplusplus >= 201703L
+//libc++ (macOS) does not have the special math functions of C++17
+#if defined(__cpp_lib_math_special_functions)
             out[elem] = std::beta(in0[elem], in1[elem]);
 #else
             out[elem] = std::exp(std::lgamma(in0[elem]) + std::lgamma(in1[elem]) - std::lgamma(in0[elem] + in1[elem]));
