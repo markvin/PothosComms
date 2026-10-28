@@ -11,7 +11,15 @@ project(PothosComms C CXX)
 option(COMMS_BUILD_TESTS "Register the CTest tests of the comms blocks" ${PROJECT_IS_TOP_LEVEL})
 option(COMMS_WARNINGS_AS_ERRORS "Treat compiler warnings as errors (GCC and Clang)" OFF)
 
-find_package(Pothos CONFIG REQUIRED)
+#the core defines the variable POTHOS_ROOT (its install prefix), and the
+#runtime environment often sets POTHOS_ROOT too. find_package must not use
+#them as search prefixes (CMP0144): it could find another core than
+#CMAKE_PREFIX_PATH gives. NO_PACKAGE_ROOT_PATH keeps them out.
+if(POLICY CMP0144)
+    cmake_policy(SET CMP0144 NEW)
+endif()
+
+find_package(Pothos CONFIG REQUIRED NO_PACKAGE_ROOT_PATH)
 include(PothosConfigSIMD) #pothos_multiarch, PothosGenerateSIMDSources
 
 #the core loads modules from its own prefix (POTHOS_ROOT): install there
