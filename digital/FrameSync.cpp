@@ -201,7 +201,7 @@ public:
         else if (mode == "DEBUG"){}
         else throw Pothos::InvalidArgumentException("FrameSync::setOutputMode("+mode+")", "unknown output mode");
         _outputModeRaw = (mode == "RAW");
-        _outputModePhase = (mode == "PHASE") | (mode == "DEBUG");
+        _outputModePhase = (mode == "PHASE") or (mode == "DEBUG");
         _outputModeTiming = (mode == "TIMING");
         _outputModeDebug = (mode == "DEBUG");
         _outputModeStr = mode;
