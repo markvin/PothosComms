@@ -62,6 +62,17 @@ target_link_libraries(comms_xsimd INTERFACE xsimd)
 ########################################################################
 # Modules
 ########################################################################
+#comms_warnings(<target>): the common warnings (GCC and Clang, as the core),
+#errors with COMMS_WARNINGS_AS_ERRORS (CI)
+function(comms_warnings target)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(${target} PRIVATE -Wall -Wextra)
+        if(COMMS_WARNINGS_AS_ERRORS)
+            target_compile_options(${target} PRIVATE -Werror)
+        endif()
+    endif()
+endfunction()
+
 #pothos_comms_module(TARGET <name> SOURCES <sources...>
 #    [LIBRARIES <libraries...>] [TESTS <self test names...>])
 #builds and installs a comms module, TESTS are names under /comms/tests
@@ -77,9 +88,7 @@ function(pothos_comms_module)
     set_target_properties(${COMMS_TARGET} PROPERTIES CXX_EXTENSIONS OFF)
     #the repository root for common/
     target_include_directories(${COMMS_TARGET} PRIVATE ${PROJECT_SOURCE_DIR})
-    if(COMMS_WARNINGS_AS_ERRORS AND NOT MSVC)
-        target_compile_options(${COMMS_TARGET} PRIVATE -Werror)
-    endif()
+    comms_warnings(${COMMS_TARGET})
     foreach(test IN LISTS COMMS_TESTS)
         set_property(GLOBAL APPEND PROPERTY POTHOS_COMMS_TESTS /comms/tests/${test})
     endforeach()
@@ -93,9 +102,7 @@ function(pothos_comms_static_library target)
         POSITION_INDEPENDENT_CODE ON
         CXX_EXTENSIONS OFF)
     target_link_libraries(${target} PRIVATE Pothos::Pothos)
-    if(COMMS_WARNINGS_AS_ERRORS AND NOT MSVC)
-        target_compile_options(${target} PRIVATE -Werror)
-    endif()
+    comms_warnings(${target})
 endfunction()
 
 add_subdirectory(functions)
