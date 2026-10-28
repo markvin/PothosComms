@@ -1,9 +1,7 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
-#ifdef POTHOS_XSIMD
 #include "SIMD/MathBlocks_SIMD.hpp"
-#endif
 
 #include <Pothos/Framework.hpp>
 
@@ -17,8 +15,6 @@
 template <typename Type>
 using PowFcn = void(*)(const Type*, Type*, Type, size_t);
 
-#ifdef POTHOS_XSIMD
-
 template <typename Type>
 static inline typename std::enable_if<std::is_floating_point<Type>::value, PowFcn<Type>>::type getPowFcn()
 {
@@ -27,10 +23,6 @@ static inline typename std::enable_if<std::is_floating_point<Type>::value, PowFc
 
 template <typename Type>
 static inline typename std::enable_if<!std::is_floating_point<Type>::value, PowFcn<Type>>::type
-#else
-template <typename Type>
-static inline PowFcn<Type>
-#endif
 getPowFcn()
 {
     return [](const Type* in, Type* out, Type exponent, size_t num)

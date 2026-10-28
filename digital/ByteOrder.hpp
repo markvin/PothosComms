@@ -3,15 +3,10 @@
 
 #pragma once
 
-#include <Poco/ByteOrder.h>
-#include <Poco/Platform.h>
-
+#include <bit>
 #include <complex>
+#include <cstdint>
 #include <type_traits>
-
-#if POCO_OS == POCO_OS_MAC_OS_X
-#include <libkern/OSByteOrder.h>
-#endif
 
 namespace detail
 {
@@ -28,33 +23,33 @@ namespace detail
     };
 
     template <>
-    struct BufferType<Poco::Int16>
+    struct BufferType<std::int16_t>
     {
-        using Type = Poco::UInt16;
+        using Type = std::uint16_t;
     };
 
     template <>
-    struct BufferType<Poco::Int32>
+    struct BufferType<std::int32_t>
     {
-        using Type = Poco::UInt32;
+        using Type = std::uint32_t;
     };
 
     template <>
-    struct BufferType<Poco::Int64>
+    struct BufferType<std::int64_t>
     {
-        using Type = Poco::UInt64;
+        using Type = std::uint64_t;
     };
 
     template <>
     struct BufferType<float>
     {
-        using Type = Poco::UInt32;
+        using Type = std::uint32_t;
     };
 
     template <>
     struct BufferType<double>
     {
-        using Type = Poco::UInt64;
+        using Type = std::uint64_t;
     };
 
     template <typename T>
@@ -67,30 +62,11 @@ namespace detail
         !std::is_same<T, typename BufferType<T>::Type>::value &&
         !IsComplex<T>::value> {};
 
-    // For some reason, despite specifically supporting OS X, Poco uses manual
-    // bit-shifting instead of OS X's optimized byteswap functions.
-#if POCO_OS == POCO_OS_MAC_OS_X
-    static inline Poco::UInt16 byteswap(Poco::UInt16 val)
-    {
-        return OSSwapInt16(val);
-    }
-
-    static inline Poco::UInt32 byteswap(Poco::UInt32 val)
-    {
-        return OSSwapInt32(val);
-    }
-
-    static inline Poco::UInt64 byteswap(Poco::UInt64 val)
-    {
-        return OSSwapInt64(val);
-    }
-#else
     template <typename T>
     static inline T byteswap(T val)
     {
-        return Poco::ByteOrder::flipBytes(val);
+        return std::byteswap(val);
     }
-#endif
     template <typename T>
     static typename std::enable_if<NoReinterpretCast<T>::value, void>::type byteswapBuffer(const T* in, T* out, size_t numElements)
     {

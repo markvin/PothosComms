@@ -2,13 +2,12 @@
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
-#include <Poco/Logger.h>
 #include <complex>
 #include <algorithm>
 #include <iostream>
-#include <spuce/filters/design_window.h>
+#include "FilterDesign.hpp"
 
-using spuce::design_window;
+using PothosComms::FilterDesign::designWindow;
 /***********************************************************************
  * |PothosDoc Window Designer
  *
@@ -126,7 +125,7 @@ void WindowDesigner::recalculate(void)
     if (_numTaps == 0) throw Pothos::Exception("WindowDesigner()", "num taps must be positive");
 
     //generate the window
-    const auto window = design_window(_windowType, _numTaps, _windowArgs.empty()?0.0:_windowArgs.at(0));
+    const auto window = designWindow(_windowType, _numTaps, _windowArgs.empty()?0.0:_windowArgs.at(0));
 
     this->emitSignal("tapsChanged", window);
 }

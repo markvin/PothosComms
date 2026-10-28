@@ -7,6 +7,9 @@
 #include <Pothos/Proxy.hpp>
 #include <cmath> //fabs
 #include <iostream>
+#include <string>
+#include <utility>
+#include <vector>
 
 static double iirfilterToneGetRMS(
 																	const double sampRate,
@@ -57,4 +60,58 @@ POTHOS_TEST_BLOCK("/comms/tests", test_iir_filter)
 	auto rms = iirfilterToneGetRMS(rate, freq);
 	std::cout << " RMS = " << rms << std::endl;
 	POTHOS_TEST_TRUE(rms > 0.1);
+}
+
+/***********************************************************************
+ * The text of the exception of a block call, empty without an exception
+ **********************************************************************/
+template <typename... Args>
+static std::string callError(const Pothos::Proxy &block, const std::string &name, Args&&... args)
+{
+    try
+    {
+        block.call(name, std::forward<Args>(args)...);
+    }
+    catch (const Pothos::Exception &ex)
+    {
+        return ex.displayText();
+    }
+    return "";
+}
+
+/***********************************************************************
+ * IIR filter taps: the first half is b, the second half is a
+ **********************************************************************/
+POTHOS_TEST_BLOCK("/comms/tests", test_iir_filter_taps)
+{
+    auto filter = Pothos::BlockRegistry::make("/comms/iir_filter", "float64");
+    POTHOS_TEST_TRUE(callError(filter, "setTaps", std::vector<double>{}).find("Order cannot 0") != std::string::npos);
+    POTHOS_TEST_TRUE(callError(filter, "setTaps", std::vector<double>{1.0}).find("Need at least 2 taps") != std::string::npos);
+    POTHOS_TEST_EQUAL(callError(filter, "setTaps", std::vector<double>{0.5, 1.0}), "");
+    POTHOS_TEST_EQUAL(callError(filter, "setTaps", std::vector<double>{1.0, 0.0, 1.0, -0.5, 9.0}), "");
+}
+
+/***********************************************************************
+ * IIR designer: an unknown IIR type or band type gives an exception
+ **********************************************************************/
+POTHOS_TEST_BLOCK("/comms/tests", test_iir_designer_errors)
+{
+    auto designer = Pothos::BlockRegistry::make("/comms/iir_designer");
+    designer.call("setSampleRate", 1.0);
+    designer.call("setFrequencyLower", 0.1);
+    designer.call("setOrder", 4);
+
+    auto filter = Pothos::BlockRegistry::make("/comms/iir_filter", "float64");
+
+    Pothos::Topology topology;
+    topology.connect(designer, "tapsChanged", filter, "setTaps");
+    topology.commit();
+
+    POTHOS_TEST_TRUE(callError(designer, "setIIRType", "foo").find("unknown filter or band type") != std::string::npos);
+    designer.call("setIIRType", "butterworth");
+    POTHOS_TEST_TRUE(callError(designer, "setFilterType", "FOO").find("unknown filter or band type") != std::string::npos);
+    designer.call("setFilterType", "LOW_PASS");
+
+    topology.disconnectAll();
+    topology.commit();
 }

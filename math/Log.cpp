@@ -2,9 +2,7 @@
 //               2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
-#ifdef POTHOS_XSIMD
 #include "SIMD/MathBlocks_SIMD.hpp"
-#endif
 
 #include <Pothos/Exception.hpp>
 #include <Pothos/Framework.hpp>
@@ -19,26 +17,15 @@
 template <typename Type>
 using LogFcn = std::function<void(const Type*, Type*, const size_t)>;
 
-#ifdef POTHOS_XSIMD
-
 template <typename Type>
 using EnableForSIMDFcn = typename std::enable_if<std::is_floating_point<Type>::value, LogFcn<Type>>::type;
 
 template <typename Type>
 using EnableForDefaultFcn = typename std::enable_if<!std::is_floating_point<Type>::value, LogFcn<Type>>::type;
 
-#else
-
-template <typename Type>
-using EnableForDefaultFcn = LogFcn<Type>;
-
-#endif
-
 /***********************************************************************
  * Implementation getters to be called on class construction
  **********************************************************************/
-
-#ifdef POTHOS_XSIMD
 
 template <typename Type>
 static inline EnableForSIMDFcn<Type> getLogFcn()
@@ -71,8 +58,6 @@ static inline EnableForSIMDFcn<Type> getLogNFcn(Type base)
 
     return std::bind(PothosCommsSIMD::logNDispatch<Type>(), _1, _2, base, _3);
 }
-
-#endif
 
 template <typename Type>
 static inline EnableForDefaultFcn<Type> getLogFcn()

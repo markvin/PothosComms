@@ -28,14 +28,16 @@ PothosGenerateSIMDSources(
     MathBlocks.json
     ${SIMDInputs})
 
-add_library(CommsMathSIMD STATIC ${SIMDSources})
-target_link_libraries(CommsMathSIMD PRIVATE xsimd)
-target_link_libraries(CommsMathSIMD PRIVATE Pothos)
-target_include_directories(CommsMathSIMD PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+pothos_comms_static_library(CommsMathSIMD ${SIMDSources})
+target_link_libraries(CommsMathSIMD PRIVATE comms_xsimd)
+#the SIMD dispatcher here, RSqrt.hpp and the generated Exp10.hpp in math/
+target_include_directories(CommsMathSIMD PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${PROJECT_SOURCE_DIR}/math
+    ${PROJECT_BINARY_DIR}/math)
 add_dependencies(CommsMathSIMD MathBlocks_SIMDDispatcher)
-set_property(TARGET CommsMathSIMD PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
 # This library is pure templates, so expect large object files.
 if(MSVC)
-    set_property(TARGET CommsMathSIMD PROPERTY COMPILE_FLAGS /bigobj)
+    target_compile_options(CommsMathSIMD PRIVATE /bigobj)
 endif()

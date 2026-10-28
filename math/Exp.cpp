@@ -1,9 +1,7 @@
 // Copyright (c) 2021 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
-#ifdef POTHOS_XSIMD
 #include "SIMD/MathBlocks_SIMD.hpp"
-#endif
 
 #include "Exp10.hpp"
 
@@ -23,8 +21,6 @@
 // needs to capture a parameter.
 template <typename Type>
 using ExpFcn = std::function<void(const Type*, Type*, const size_t)>;
-
-#ifdef POTHOS_XSIMD
 
 template <typename Type>
 static inline ExpFcn<Type> getExpFcn()
@@ -57,52 +53,6 @@ static inline ExpFcn<Type> getExpNFcn(Type base)
 
     return std::bind(PothosCommsSIMD::expNDispatch<Type>(), _1, _2, base, _3);
 }
-
-#else
-
-template <typename Type>
-static inline ExpFcn<Type> getExpFcn()
-{
-    return [](const Type* in, Type* out, const size_t num)
-    {
-        for (size_t i = 0; i < num; ++i) out[i] = std::exp(in[i]);
-    };
-}
-
-template <typename Type>
-static inline ExpFcn<Type> getExp2Fcn()
-{
-    return [](const Type* in, Type* out, const size_t num)
-    {
-        for (size_t i = 0; i < num; ++i) out[i] = std::exp2(in[i]);
-    };
-}
-
-template <typename Type>
-static inline ExpFcn<Type> getExp10Fcn()
-{
-    return &exp10Buffer<Type>;
-}
-
-template <typename Type>
-static inline ExpFcn<Type> getExpM1Fcn()
-{
-    return [](const Type* in, Type* out, const size_t num)
-    {
-        for (size_t i = 0; i < num; ++i) out[i] = std::expm1(in[i]);
-    };
-}
-
-template <typename Type>
-static inline ExpFcn<Type> getExpNFcn(Type base)
-{
-    return [base](const Type* in, Type* out, const size_t num)
-    {
-        for (size_t i = 0; i < num; ++i) out[i] = std::pow(base, in[i]);
-    };
-}
-
-#endif
 
 /***********************************************************************
  * Implementation

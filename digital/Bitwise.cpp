@@ -5,7 +5,7 @@
 #include <Pothos/Framework.hpp>
 #include <Pothos/Object.hpp>
 
-#include <Poco/Format.h>
+#include <format>
 
 #include <complex>
 #include <cstring>
@@ -289,8 +289,8 @@ public:
         if (shiftSize >= (sizeof(Type)*8))
         {
             throw Pothos::RangeException(
-                      Poco::format(
-                          "Shift size cannot be >= the number of bits (%z) in the type (%s)",
+                      std::format(
+                          "Shift size cannot be >= the number of bits ({}) in the type ({})",
                           (sizeof(Type)*8),
                           Pothos::DType(typeid(Type)).toString()));
         }
@@ -332,7 +332,7 @@ public:
         const Pothos::DType& dtype,
         const std::string& operation
     ):
-    Pothos::InvalidArgumentException(Poco::format("DType: %s, Operation: %s", dtype.toString(), operation))
+    Pothos::InvalidArgumentException(std::format("DType: {}, Operation: {}", dtype.toString(), operation))
     {}
 };
 

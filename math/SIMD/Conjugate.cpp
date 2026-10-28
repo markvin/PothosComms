@@ -1,9 +1,10 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <xsimd/xsimd.hpp>
-#include <Pothos/Util/XSIMDTraits.hpp>
+//One copy per SIMD architecture (PothosGenerateSIMDSources)
+#include <Pothos/Util/XSIMDCopy.hpp>
 
+#include <array>
 #include <cmath>
 #include <complex>
 #include <type_traits>
@@ -11,10 +12,6 @@
 // Actually enforce EnableForSIMDConjugate
 #ifdef _MSC_VER
 #pragma warning(error: 4667) // no function template defined that matches forced instantiation
-#endif
-
-#if !defined POTHOS_SIMD_NAMESPACE
-#error Must define POTHOS_SIMD_NAMESPACE to build this file
 #endif
 
 namespace PothosCommsSIMD { namespace POTHOS_SIMD_NAMESPACE {
@@ -50,65 +47,16 @@ namespace detail
     // here. Instead, we'll parse the input buffers as scalars and apply a
     // mask such that every other element is multiplied by -1.
     //
-    // The size of SIMD registers needs to be known at build-time, so we
-    // implement a mask getter function for all possible sizes, and XSIMD's
-    // templatizing will choose which one of these to apply for the given
-    // SIMD instruction set.
+    // The mask has one lane for each scalar of the SIMD register: false for
+    // the real fields, true for the imaginary fields.
     //
 
     template <typename T>
-    static inline xsimd::batch_bool<T, 2> getImagMask(const xsimd::batch<T, 2>*)
+    static inline xsimd::batch_bool<T> getImagMask()
     {
-        return xsimd::batch_bool<T, 2>(false, true);
-    }
-
-    template <typename T>
-    static inline xsimd::batch_bool<T, 4> getImagMask(const xsimd::batch<T, 4>*)
-    {
-        return xsimd::batch_bool<T, 4>(false, true, false, true);
-    }
-
-    template <typename T>
-    static inline xsimd::batch_bool<T, 8> getImagMask(const xsimd::batch<T, 8>*)
-    {
-        return xsimd::batch_bool<T, 8>(
-            false, true, false, true, false, true, false, true
-            );
-    }
-
-    template <typename T>
-    static inline xsimd::batch_bool<T, 16> getImagMask(const xsimd::batch<T, 16>*)
-    {
-        return xsimd::batch_bool<T, 16>(
-            false, true, false, true, false, true, false, true,
-            false, true, false, true, false, true, false, true
-            );
-    }
-
-    template <typename T>
-    static inline xsimd::batch_bool<T, 32> getImagMask(const xsimd::batch<T, 32>*)
-    {
-        return xsimd::batch_bool<T, 32>(
-            false, true, false, true, false, true, false, true,
-            false, true, false, true, false, true, false, true,
-            false, true, false, true, false, true, false, true,
-            false, true, false, true, false, true, false, true
-            );
-    }
-
-    template <typename T>
-    static inline xsimd::batch_bool<T, 64> getImagMask(const xsimd::batch<T, 64>*)
-    {
-        return xsimd::batch_bool<T, 64>(
-            false, true, false, true, false, true, false, true,
-            false, true, false, true, false, true, false, true,
-            false, true, false, true, false, true, false, true,
-            false, true, false, true, false, true, false, true,
-            false, true, false, true, false, true, false, true,
-            false, true, false, true, false, true, false, true,
-            false, true, false, true, false, true, false, true,
-            false, true, false, true, false, true, false, true
-            );
+        std::array<bool, xsimd::batch_bool<T>::size> mask{};
+        for (size_t i = 1; i < mask.size(); i += 2) mask[i] = true;
+        return xsimd::batch_bool<T>::load_unaligned(mask.data());
     }
 
     template <typename T>
@@ -129,14 +77,13 @@ namespace detail
         const auto scalarLen = len * 2;
         const auto numSIMDFrames = scalarLen / simdSize;
 
-        static const xsimd::batch<ScalarType, simdSize>* batchPtrParam = nullptr;
-        static const auto imagMask = getImagMask<ScalarType>(batchPtrParam);
+        static const auto imagMask = getImagMask<ScalarType>();
 
         const ScalarType* scalarIn = (const ScalarType*)in;
         const ScalarType* scalarInPtr = (const ScalarType*)in;
         ScalarType* scalarOutPtr = (ScalarType*)out;
 
-        static const auto NegOneReg = xsimd::batch<ScalarType, simdSize>(-1);
+        static const auto NegOneReg = xsimd::batch<ScalarType>(-1);
 
         for (size_t frameIndex = 0; frameIndex < numSIMDFrames; ++frameIndex)
         {

@@ -1,9 +1,7 @@
 // Copyright (c) 2021 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
-#ifdef POTHOS_XSIMD
 #include "SIMD/MathBlocks_SIMD.hpp"
-#endif
 
 #include <Pothos/Framework.hpp>
 
@@ -16,29 +14,11 @@
 template <typename Type>
 using ModFFcn = void(*)(const Type*, Type*, Type*, const size_t);
 
-#ifdef POTHOS_XSIMD
-
 template <typename Type>
 static inline ModFFcn<Type> getModFFcn()
 {
     return PothosCommsSIMD::modfDispatch<Type>();
 }
-
-#else
-
-template <typename Type>
-static inline ModFFcn<Type> getModFFcn()
-{
-    return [](const Type* in, Type* integralOut, Type* fractionalOut, const size_t num)
-    {
-        for (size_t i = 0; i < num; i++)
-        {
-            fractionalOut[i] = std::modf(in[i], &integralOut[i]);
-        }
-    };
-}
-
-#endif
 
 /***********************************************************************
  * |PothosDoc Decompose Floats

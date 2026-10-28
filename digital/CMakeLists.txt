@@ -1,22 +1,7 @@
 ########################################################################
-## Feature registration
+# Digital byte, bit and symbol blocks module
 ########################################################################
-cmake_dependent_option(ENABLE_COMMS_DIGITAL "Enable Pothos Comms.Digital component" ON "ENABLE_COMMS;JSON_HPP_INCLUDE_DIR" OFF)
-add_feature_info("  Digital" ENABLE_COMMS_DIGITAL "Digital byte, bit, and symbol operators")
-if (NOT ENABLE_COMMS_DIGITAL)
-    return()
-endif()
-
-########################################################################
-# Digital blocks module
-########################################################################
-if(MSVC)
-    add_definitions(/bigobj) #may be helpful for templated factories
-endif(MSVC)
-
-include_directories(${JSON_HPP_INCLUDE_DIR})
-
-POTHOS_MODULE_UTIL(
+pothos_comms_module(
     TARGET DigitalBlocks
     SOURCES
         SymbolMapper.cpp
@@ -44,7 +29,22 @@ POTHOS_MODULE_UTIL(
         TestByteOrder.cpp
         Bitwise.cpp
         TestBitwise.cpp
-    LIBRARIES CommsTests
-    DESTINATION comms
-    ENABLE_DOCS
+    TESTS
+        test_symbol_byte_conversions
+        test_differential_coding
+        test_byte_order
+        test_preamble_framer
+        test_symbol_mapper_slicer_float
+        test_symbol_mapper_slicer_complex
+        test_symbol_mapper_gray_code
+        test_preamble_correlator
+        test_framer_to_correlator
+        test_bitwise_unary
+        test_bitwise_binary
+        test_bitwise_const_binary
+        test_bitshift
+        test_symbol_bit_conversions
 )
+if(MSVC)
+    target_compile_options(DigitalBlocks PRIVATE /bigobj) #large templated factories
+endif()

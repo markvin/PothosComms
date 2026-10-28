@@ -6,7 +6,7 @@
 #include <Pothos/Proxy.hpp>
 #include <Pothos/Remote.hpp>
 #include <iostream>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 

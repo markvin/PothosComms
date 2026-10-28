@@ -1,9 +1,7 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
-#ifdef POTHOS_XSIMD
 #include "SIMD/MathBlocks_SIMD.hpp"
-#endif
 
 #include <Pothos/Callable.hpp>
 #include <Pothos/Exception.hpp>
@@ -27,8 +25,6 @@ using ConstArithmeticFcn = void(*)(const T*, const T&, T*, size_t);
 //
 // Implementation getters, called on class construction
 //
-
-#ifdef POTHOS_XSIMD
 
 template <typename T>
 static inline ConstArithmeticFcn<T> getXPlusKFcn()
@@ -65,64 +61,6 @@ static inline ConstArithmeticFcn<T> getKDivXFcn()
 {
     return PothosCommsSIMD::KDivXDispatch<T>();
 }
-
-#else
-
-template <typename T>
-static inline ConstArithmeticFcn<T> getXPlusKFcn()
-{
-    return [](const T* in, const T& k, T* out, const size_t num)
-    {
-        for (size_t i = 0; i < num; i++) out[i] = in[i] + k;
-    };
-}
-
-template <typename T>
-static inline ConstArithmeticFcn<T> getXSubKFcn()
-{
-    return [](const T* in, const T& k, T* out, const size_t num)
-    {
-        for (size_t i = 0; i < num; i++) out[i] = in[i] - k;
-    };
-}
-
-template <typename T>
-static inline ConstArithmeticFcn<T> getKSubXFcn()
-{
-    return [](const T* in, const T& k, T* out, const size_t num)
-    {
-        for (size_t i = 0; i < num; i++) out[i] = k - in[i];
-    };
-}
-
-template <typename T>
-static inline ConstArithmeticFcn<T> getXMultKFcn()
-{
-    return [](const T* in, const T& k, T* out, const size_t num)
-    {
-        for (size_t i = 0; i < num; i++) out[i] = in[i] * k;
-    };
-}
-
-template <typename T>
-static inline ConstArithmeticFcn<T> getXDivKFcn()
-{
-    return [](const T* in, const T& k, T* out, const size_t num)
-    {
-        for (size_t i = 0; i < num; i++) out[i] = in[i] / k;
-    };
-}
-
-template <typename T>
-static inline ConstArithmeticFcn<T> getKDivXFcn()
-{
-    return [](const T* in, const T& k, T* out, const size_t num)
-    {
-        for (size_t i = 0; i < num; i++) out[i] = k / in[i];
-    };
-}
-
-#endif
 
 /***********************************************************************
  * |PothosDoc Const Arithmetic

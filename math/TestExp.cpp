@@ -7,7 +7,7 @@
 #include <Pothos/Framework.hpp>
 #include <Pothos/Proxy.hpp>
 
-#include <Poco/Random.h>
+#include <random>
 
 #include <cstdint>
 #include <cmath>
@@ -55,7 +55,19 @@ static double expNTmpl(Type input, Type base)
     return std::pow(base, input);
 }
 
-static Poco::Random rng;
+static std::mt19937 rng{std::random_device{}()};
+
+//a random integer in [0, n)
+static unsigned rngNext(unsigned n)
+{
+    return std::uniform_int_distribution<unsigned>(0, n-1)(rng);
+}
+
+//a random float in [0, 1]
+static float rngNextFloat()
+{
+    return std::uniform_real_distribution<float>(0.0f, 1.0f)(rng);
+}
 
 template <typename T>
 constexpr typename std::enable_if<std::is_integral<T>::value, T>::type maxRandNum()
@@ -72,7 +84,7 @@ constexpr typename std::enable_if<std::is_floating_point<T>::value, T>::type max
 template <typename T>
 static inline typename std::enable_if<std::is_integral<T>::value, T>::type randNum()
 {
-    T ret = T(rng.next(maxRandNum<T>()));
+    T ret = T(rngNext(maxRandNum<T>()));
     if(std::is_signed<T>::value) ret -= maxRandNum<T>();
 
     return ret;
@@ -82,7 +94,7 @@ template <typename T>
 static inline typename std::enable_if<std::is_floating_point<T>::value, T>::type randNum()
 {
     // nextFloat() return a value [0,1]
-    return (rng.nextFloat() * maxRandNum<T>()) - maxRandNum<T>();
+    return (rngNextFloat() * maxRandNum<T>()) - maxRandNum<T>();
 }
 
 //

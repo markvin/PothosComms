@@ -1,8 +1,8 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <xsimd/xsimd.hpp>
-#include <Pothos/Util/XSIMDTraits.hpp>
+//One copy per SIMD architecture (PothosGenerateSIMDSources)
+#include <Pothos/Util/XSIMDCopy.hpp>
 
 #include <cmath>
 #include <type_traits>
@@ -10,10 +10,6 @@
 // Actually enforce IsGammaSupported
 #ifdef _MSC_VER
 #pragma warning(error: 4667) // no function template defined that matches forced instantiation
-#endif
-
-#if !defined POTHOS_SIMD_NAMESPACE
-#error Must define POTHOS_SIMD_NAMESPACE to build this file
 #endif
 
 namespace PothosCommsSIMD { namespace POTHOS_SIMD_NAMESPACE {

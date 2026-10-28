@@ -2,9 +2,7 @@
 //                    2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
-#ifdef POTHOS_XSIMD
 #include "SIMD/MathBlocks_SIMD.hpp"
-#endif
 
 #include <Pothos/Framework.hpp>
 #include <cstdint>
@@ -20,26 +18,11 @@
 template <typename Type>
 using ConjFcn = void(*)(const Type*, Type*, const size_t);
 
-#ifdef POTHOS_XSIMD
-
 template <typename Type>
 static inline ConjFcn<Type> getConjFcn()
 {
     return PothosCommsSIMD::conjDispatch<Type>();
 }
-
-#else
-
-template <typename Type>
-static inline ConjFcn<Type> getConjFcn()
-{
-    return [](const Type* in, Type* out, const size_t num)
-    {
-        for (size_t i = 0; i < num; ++i) out[i] = std::conj(in[i]);
-    };
-}
-
-#endif
 
 /***********************************************************************
  * |PothosDoc Conjugate

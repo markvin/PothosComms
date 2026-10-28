@@ -6,7 +6,8 @@
 #include <Pothos/Framework.hpp>
 #include <Pothos/Testing.hpp>
 
-#include <Poco/RandomStream.h>
+#include <cstdint>
+#include <random>
 
 #include <iostream>
 #include <vector>
@@ -18,12 +19,19 @@
 // Enough for any SIMD frame, plus some extra manual calculations
 static constexpr size_t bufferLen = 150;
 
+static void fillRandomBytes(void* dst, size_t numBytes)
+{
+    static std::mt19937 rng{std::random_device{}()};
+    std::uniform_int_distribution<unsigned> dist(0, 0xff);
+    auto* bytes = static_cast<std::uint8_t*>(dst);
+    for (size_t i = 0; i < numBytes; ++i) bytes[i] = static_cast<std::uint8_t>(dist(rng));
+}
+
 template <typename T>
 static Pothos::BufferChunk getTestInputs()
 {
     Pothos::BufferChunk bufferChunk(typeid(T), bufferLen);
-    Poco::RandomBuf randomBuf;
-    randomBuf.readFromDevice(bufferChunk, bufferChunk.length);
+    fillRandomBytes(bufferChunk.as<void*>(), bufferChunk.length);
 
     return bufferChunk;
 }
@@ -32,8 +40,7 @@ template <typename T>
 static T getRandomValue()
 {
     T constant;
-    Poco::RandomBuf randomBuf;
-    randomBuf.readFromDevice((char*)&constant, sizeof(constant));
+    fillRandomBytes(&constant, sizeof(constant));
 
     return constant;
 }

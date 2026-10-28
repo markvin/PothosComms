@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
-#include <Poco/Logger.h>
+#include <Pothos/System/Logger.hpp>
 #include <chrono>
 #include <complex>
 #include <iostream>
@@ -169,7 +169,6 @@ public:
     }
 
     WaveTrigger(void):
-        _logger(Poco::Logger::get("WaveTrigger")),
         _numPoints(0),
         _numWindows(1),
         _eventRate(1.0),
@@ -432,10 +431,9 @@ private:
     void triggerWork(void);
 
     //logging
-    Poco::Logger &_logger;
     void _logDataTypeError(const std::string &portName, const std::string &what)
     {
-        _logger.error("%s[%s] dropped %s with unspecified type", this->getName(), portName, what);
+        POTHOS_LOG_ERROR("WaveTrigger", "{}[{}] dropped {} with unspecified type", this->getName(), portName, what);
     }
 
     //configuration settings

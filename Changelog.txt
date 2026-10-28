@@ -4,6 +4,14 @@ Release 0.4.0 (pending)
 ==========================
 
 - XSIMD implementation of various blocks
+- Port to the pothos2 core: no Poco, xsimd is required
+- Dependencies (nlohmann_json, xsimd) through find_package,
+  from the system packages or from Conan 2 (conanfile.txt)
+- Own filter design code in filter/design (from spuce ad08df7),
+  comms does not need spuce
+- IIRFilter: setTaps gives an error for 1 tap
+- IIRDesigner: an unknown IIR type or band type gives an error
+- FIRDesigner: Remez band edges that spuce did not support give an error
 
 New blocks:
 

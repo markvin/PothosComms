@@ -7,10 +7,9 @@
 #include <complex>
 #include <iostream>
 
-#include <spuce/filters/design_iir.h>
-#include <spuce/filters/iir_coeff.h>
+#include "FilterDesign.hpp"
 
-using namespace spuce;
+using PothosComms::FilterDesign::designIIR;
 
 /***********************************************************************
  * |PothosDoc IIR Designer
@@ -207,19 +206,18 @@ void IIRDesigner::recalculate(void) {
 
   
   // generate the filter design
-  iir_coeff* filt = design_iir(_IIRType, _filterType, _order, bw, _ripple,
+  const auto filt = designIIR(_IIRType, _filterType, _order, bw, _ripple,
 							   _stopBandAtten, center_frequency);
-  if (filt == nullptr) {
+  if (not filt) {
 	throw Pothos::InvalidArgumentException("IIRDesigner(" + _filterType + "," + _IIRType + ")", "unknown filter or band type");
   }
   
-  // get the tap from iir_coeff for iir_filter, incorporating the gain to feedforward taps
-  std::vector<double> b = filt->get_b();
-  std::vector<double> a = filt->get_a();
+  // get the taps for iir_filter, the gain is in the feedforward taps
+  std::vector<double> b = filt->b;
+  const std::vector<double> &a = filt->a;
   // Group together feed forward and feed back taps into 1 vector for transferring to IIR filter
   for (size_t i=0;i<a.size();i++) b.push_back(a[i]);
   
-  delete filt;
   this->emitSignal("tapsChanged", b);
 }
 
