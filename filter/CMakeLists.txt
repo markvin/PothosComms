@@ -1,16 +1,7 @@
 ########################################################################
-## Feature registration
-########################################################################
-cmake_dependent_option(ENABLE_COMMS_FILTER "Enable Pothos Comms.Filter component" ON "ENABLE_COMMS;Spuce_FOUND" OFF)
-add_feature_info("  Filter" ENABLE_COMMS_FILTER "Digital filter and tap designer blocks")
-if (NOT ENABLE_COMMS_FILTER)
-    return()
-endif()
-
-########################################################################
 # Filter blocks module
 ########################################################################
-POTHOS_MODULE_UTIL(
+pothos_comms_module(
     TARGET FilterBlocks
     SOURCES
         DCRemoval.cpp
@@ -22,9 +13,21 @@ POTHOS_MODULE_UTIL(
         TestFIRFilter.cpp
         TestIIRFilter.cpp
         EnvelopeDetector.cpp
-    DESTINATION comms
+        design/TestFilterDesign.cpp
     LIBRARIES
-        spuce
+        comms_filter_design
         CommsFunctions
-    ENABLE_DOCS
+    TESTS
+        test_fir_designer
+        test_fir_designer_errors
+        test_fir_filter
+        test_iir_filter
+        test_iir_filter_taps
+        test_iir_designer_errors
+        test_filter_design_window
+        test_filter_design_fir
+        test_filter_design_remez_estimate
+        test_filter_design_iir
+        test_filter_design_iir_run
+        test_filter_design_iir_taps
 )

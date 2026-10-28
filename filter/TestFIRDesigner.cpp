@@ -8,6 +8,9 @@
 #include <complex>
 #include <iostream>
 #include <algorithm> //max_element
+#include <string>
+#include <utility>
+#include <vector>
 
 /***********************************************************************
  * Convert an FFT into a power spectrum
@@ -272,4 +275,76 @@ POTHOS_TEST_BLOCK("/comms/tests", test_fir_designer)
             testFIRDesignerResponse(filterType, bandType);
         }
     }
+}
+
+/***********************************************************************
+ * The text of the exception of a block call, empty without an exception
+ **********************************************************************/
+template <typename... Args>
+static std::string callError(const Pothos::Proxy &block, const std::string &name, Args&&... args)
+{
+    try
+    {
+        block.call(name, std::forward<Args>(args)...);
+    }
+    catch (const Pothos::Exception &ex)
+    {
+        return ex.displayText();
+    }
+    return "";
+}
+
+/***********************************************************************
+ * Parameters that the designer rejects: an exception, and no new taps
+ **********************************************************************/
+POTHOS_TEST_BLOCK("/comms/tests", test_fir_designer_errors)
+{
+    auto designer = Pothos::BlockRegistry::make("/comms/fir_designer");
+    designer.call("setSampleRate", 1.0);
+    designer.call("setFilterType", "SINC");
+    designer.call("setBandType", "BAND_PASS");
+    designer.call("setFrequencyLower", 0.1);
+    designer.call("setFrequencyUpper", 0.2);
+    designer.call("setNumTaps", 15);
+
+    auto filter = Pothos::BlockRegistry::make("/comms/fir_filter", "float64", "REAL");
+
+    Pothos::Topology topology;
+    topology.connect(designer, "tapsChanged", filter, "setTaps");
+    topology.commit();
+
+    const std::vector<double> taps = filter.call("getTaps");
+    POTHOS_TEST_EQUAL(taps.size(), 15u);
+    const auto checkError = [&](const std::string &error, const std::string &expected)
+    {
+        POTHOS_TEST_TRUE(error.find(expected) != std::string::npos);
+        const std::vector<double> tapsNow = filter.call("getTaps");
+        POTHOS_TEST_EQUALV(tapsNow, taps);
+    };
+
+    //0 taps: the check of the block, before the design
+    checkError(callError(designer, "setNumTaps", 0), "num taps must be positive");
+    designer.call("setNumTaps", 15);
+
+    //lower edge >= upper edge: the check of the block, before the design
+    checkError(callError(designer, "setFrequencyLower", 0.2), "upper frequency <= lower frequency");
+    designer.call("setFrequencyLower", 0.1);
+
+    //unknown filter type: the error of the design code
+    checkError(callError(designer, "setFilterType", "FOO"), "Unknown fir type : foo");
+    designer.call("setFilterType", "SINC");
+
+    //Remez band edges that make the dense grid too small (undefined behavior in the old design library)
+    designer.call("setFrequencyLower", 0.05);
+    designer.call("setFrequencyUpper", 0.4);
+    designer.call("setBandwidthTrans", 0.35);
+    const std::vector<double> sincTaps = filter.call("getTaps");
+    POTHOS_TEST_EQUAL(sincTaps.size(), 15u);
+    const auto error = callError(designer, "setFilterType", "REMEZ");
+    POTHOS_TEST_TRUE(error.find("Gridsize issue in Remez") != std::string::npos);
+    const std::vector<double> tapsNow = filter.call("getTaps");
+    POTHOS_TEST_EQUALV(tapsNow, sincTaps);
+
+    topology.disconnectAll();
+    topology.commit();
 }

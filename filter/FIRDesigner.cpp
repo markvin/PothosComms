@@ -2,21 +2,19 @@
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
-#include <Poco/Logger.h>
+#include <Pothos/System/Logger.hpp>
 #include <complex>
 #include <algorithm>
 #include <iostream>
-#include <spuce/filters/remez_estimate.h>
-#include <spuce/filters/design_fir.h>
-#include <spuce/filters/design_window.h>
+#include "FilterDesign.hpp"
 
-using spuce::design_fir;
-using spuce::design_complex_fir;
-using spuce::design_window;
-using spuce::remez_estimate_num_taps;
-using spuce::remez_estimate_weight;
-using spuce::remez_estimate_bw;
-using spuce::remez_estimate_atten;
+using PothosComms::FilterDesign::designFIR;
+using PothosComms::FilterDesign::designComplexFIR;
+using PothosComms::FilterDesign::designWindow;
+using PothosComms::FilterDesign::remezEstimateNumTaps;
+using PothosComms::FilterDesign::remezEstimateWeight;
+using PothosComms::FilterDesign::remezEstimateBw;
+using PothosComms::FilterDesign::remezEstimateAtten;
 /***********************************************************************
  * |PothosDoc FIR Designer
  *
@@ -202,8 +200,8 @@ public:
             type == "COMPLEX_BAND_STOP"
         )
         {
-            poco_warning_f1(Poco::Logger::get("FIRDesigner"),
-                "Filter type '%s' should now be used as a band type, with filter type set to 'SINC'", type);
+            POTHOS_LOG_WARNING("FIRDesigner",
+                "Filter type '{}' should now be used as a band type, with filter type set to 'SINC'", type);
             _filterType = "SINC";
             _bandType = type;
             this->recalculate();
@@ -423,19 +421,19 @@ void FIRDesigner::recalculate(void)
       if (_stopDB <= 0) throw Pothos::Exception("FIRDesigner()","Stopband Attenuation must be > 0");
       _alpha = _transBw/_sampRate;
       // This formula basically works if none of the passband or stopband frequencies are too close to 0 or 0.5
-      size_t num_taps_est = remez_estimate_num_taps(_alpha, _passDB, _stopDB);
+      size_t num_taps_est = remezEstimateNumTaps(_alpha, _passDB, _stopDB);
       if (num_taps_est > _numTaps) {
-        double max_atten = remez_estimate_atten(_numTaps, _alpha, _passDB);
-        double min_trans_bw = remez_estimate_bw(_numTaps, _passDB, _stopDB);
-        poco_warning_f3(Poco::Logger::get("FIRDesigner.Remez"),
+        double max_atten = remezEstimateAtten(_numTaps, _alpha, _passDB);
+        double min_trans_bw = remezEstimateBw(_numTaps, _passDB, _stopDB);
+        POTHOS_LOG_WARNING("FIRDesigner.Remez",
             "Remez order not large enough to meet specification:\n"
-            "  - either increase filter order to %z taps,\n"
-            "  - decrease stopband attenuation to %f dB,\n"
-            "  - increase transition bandwidth to %f kHz,\n"
+            "  - either increase filter order to {} taps,\n"
+            "  - decrease stopband attenuation to {:f} dB,\n"
+            "  - increase transition bandwidth to {:f} kHz,\n"
             "  - or increase passband ripple.",
             num_taps_est, max_atten, min_trans_bw*_sampRate/1e3);
       }
-      _weight = remez_estimate_weight(_passDB, _stopDB);
+      _weight = remezEstimateWeight(_passDB, _stopDB);
     }
 
     std::string filt_type = _filterType;
@@ -447,9 +445,9 @@ void FIRDesigner::recalculate(void)
     std::vector<std::complex<double>> complexTaps;
     try {
       if ((_bandType == "COMPLEX_BAND_PASS") || (_bandType == "COMPLEX_BAND_STOP")) {
-        complexTaps = design_complex_fir(filt_type, _bandType, _numTaps, _freqLower/_sampRate, _freqUpper/_sampRate, _alpha, _weight);
+        complexTaps = designComplexFIR(filt_type, _bandType, _numTaps, _freqLower/_sampRate, _freqUpper/_sampRate, _alpha, _weight);
       } else {
-        taps = design_fir(filt_type, _bandType, _numTaps, _freqLower/_sampRate, _freqUpper/_sampRate, _alpha, _weight);
+        taps = designFIR(filt_type, _bandType, _numTaps, _freqLower/_sampRate, _freqUpper/_sampRate, _alpha, _weight);
       }
     }
     catch (const std::runtime_error &error) {
@@ -458,13 +456,11 @@ void FIRDesigner::recalculate(void)
       
 
     /* apply gain */
-    std::transform(complexTaps.begin(), complexTaps.end(), complexTaps.begin(),
-                   std::bind1st(std::multiplies<std::complex<double>>(),_gain));
-    std::transform(taps.begin(), taps.end(), taps.begin(),
-                   std::bind1st(std::multiplies<double>(),_gain));
+    for (auto &tap : complexTaps) tap = std::complex<double>(_gain) * tap;
+    for (auto &tap : taps) tap = _gain * tap;
 
     //generate the window
-    const auto window = design_window(_windowType, _numTaps, _windowArgs.empty()?0.0:_windowArgs.at(0));
+    const auto window = designWindow(_windowType, _numTaps, _windowArgs.empty()?0.0:_windowArgs.at(0));
 
     // Apply window & emit taps
     if (not complexTaps.empty()) {

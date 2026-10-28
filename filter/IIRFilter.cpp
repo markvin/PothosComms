@@ -6,8 +6,20 @@
 #include <iostream>
 #include <algorithm>  //min/max
 
-#include <spuce/filters/iir_df.h>
-using namespace spuce;
+#include <Pothos/System/Logger.hpp>
+#include <span>
+#include <string>
+#include "DirectFormIIR.hpp"
+
+using PothosComms::FilterDesign::DirectFormIIR;
+
+//the taps as text for the debug log
+static std::string tapsText(const std::span<const double> taps)
+{
+  std::string text;
+  for (const auto tap : taps) text += (text.empty() ? "" : " ") + std::to_string(tap);
+  return text;
+}
 /***********************************************************************
  * |PothosDoc IIR Filter
  *
@@ -63,9 +75,11 @@ template <typename Type> class IIRFilter : public Pothos::Block {
 
   void setTaps(const std::vector<double>& taps){
     if (taps.size() == 0) throw Pothos::InvalidArgumentException("IIRFilter::setTaps()", "Order cannot 0");
-	IIR.set_taps(taps);
+    //the first half is b, the second half is a: each needs at least one tap
+    if (taps.size() < 2) throw Pothos::InvalidArgumentException("IIRFilter::setTaps()", "Need at least 2 taps (feedforward and feedback)");
+	IIR.setTaps(taps);
 	IIR.reset();
-	IIR.print();
+	POTHOS_LOG_DEBUG("IIRFilter", "B {} A {}", tapsText(IIR.feedforward()), tapsText(IIR.feedback()));
     _waitTapsArmed = false;  // got taps
   }
 
@@ -99,7 +113,7 @@ template <typename Type> class IIRFilter : public Pothos::Block {
   }
 	
  private:
-  iir_df<Type, double> IIR;
+  DirectFormIIR<Type, double> IIR;
   bool _waitTapsMode;
   bool _waitTapsArmed;
 };
