@@ -1,9 +1,7 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
-#ifdef POTHOS_XSIMD
 #include "SIMD/MathBlocks_SIMD.hpp"
-#endif
 
 #include <Pothos/Framework.hpp>
 
@@ -16,8 +14,6 @@
 template <typename Type>
 using GammaFcn = void(*)(const Type*, Type*, size_t);
 
-#ifdef POTHOS_XSIMD
-
 template <typename Type>
 static inline GammaFcn<Type> getGammaFcn()
 {
@@ -29,28 +25,6 @@ inline GammaFcn<Type> getLnGammaFcn()
 {
     return PothosCommsSIMD::lgammaDispatch<Type>();
 }
-
-#else
-
-template <typename Type>
-static inline GammaFcn<Type> getGammaFcn()
-{
-    return [](const Type* in, Type* out, size_t len)
-    {
-        for (size_t i = 0; i < len; ++i) out[i] = std::tgamma(in[i]);
-    };
-}
-
-template <typename Type>
-static inline GammaFcn<Type> getLnGammaFcn()
-{
-    return [](const Type* in, Type* out, size_t len)
-    {
-        for (size_t i = 0; i < len; ++i) out[i] = std::lgamma(in[i]);
-    };
-}
-
-#endif
 
 //
 // Block implementation

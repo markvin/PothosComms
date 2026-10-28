@@ -2,9 +2,7 @@
 //                    2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
-#ifdef POTHOS_XSIMD
 #include "SIMD/MathBlocks_SIMD.hpp"
-#endif
 
 #include <Pothos/Framework.hpp>
 #include <cstdint>
@@ -21,8 +19,6 @@
 
 template <typename Type>
 using ArithFcn = void(*)(const Type*, const Type*, Type*, const size_t);
-
-#ifdef POTHOS_XSIMD
 
 //
 // For complex multiplication and division, always use the default implementations
@@ -65,30 +61,6 @@ static inline EnableForSIMDFcn<Type> getDivFcn()
 {
     return PothosCommsSIMD::divDispatch<Type>();
 }
-
-#else
-
-template <typename Type>
-using EnableForDefaultFcn = ArithFcn<Type>;
-
-template <typename Type>
-static inline EnableForDefaultFcn<Type> getAddFcn()
-{
-    return [](const Type* in0, const Type* in1, Type* out, const size_t num)
-    {
-        for (size_t i = 0; i < num; ++i) out[i] = in0[i] + in1[i];
-    };
-}
-
-template <typename Type>
-static inline EnableForDefaultFcn<Type> getSubFcn()
-{
-    return [](const Type* in0, const Type* in1, Type* out, const size_t num)
-    {
-        for (size_t i = 0; i < num; ++i) out[i] = in0[i] - in1[i];
-    };
-}
-#endif
 
 template <typename Type>
 static inline EnableForDefaultFcn<Type> getMulFcn()

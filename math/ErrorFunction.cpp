@@ -1,9 +1,7 @@
 // Copyright (c) 2021 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
-#ifdef POTHOS_XSIMD
 #include "SIMD/MathBlocks_SIMD.hpp"
-#endif
 
 #include <Pothos/Framework.hpp>
 
@@ -12,8 +10,6 @@
 //
 // Implementation getters to be called on class construction
 //
-
-#ifdef POTHOS_XSIMD
 
 template <typename Type>
 using ErfFcn = void(*)(const Type*, Type*, size_t);
@@ -29,31 +25,6 @@ static inline ErfFcn<Type> getErfcFcn()
 {
     return PothosCommsSIMD::erfcDispatch<Type>();
 }
-
-#else
-
-template <typename Type>
-using ErfFcn = void(*)(const Type*, Type*, size_t);
-
-template <typename Type>
-static inline ErfFcn<Type> getErfFcn()
-{
-    return [](const Type* in, Type* out, size_t len)
-    {
-        for (size_t i = 0; i < len; ++i) out[i] = std::erf(in[i]);
-    };
-}
-
-template <typename Type>
-static inline ErfFcn<Type> getErfcFcn()
-{
-    return [](const Type* in, Type* out, size_t len)
-    {
-        for (size_t i = 0; i < len; ++i) out[i] = std::erfc(in[i]);
-    };
-}
-
-#endif
 
 //
 // Block implementation

@@ -2,9 +2,7 @@
 //                    2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
-#ifdef POTHOS_XSIMD
 #include "SIMD/MathBlocks_SIMD.hpp"
-#endif
 
 #include <Pothos/Framework.hpp>
 #include <cstdint>
@@ -21,8 +19,6 @@
 template <typename InType, typename OutType>
 using AbsFcn = void(*)(const InType*, OutType*, const size_t);
 
-#ifdef POTHOS_XSIMD
-
 template <typename InType, typename OutType>
 static typename std::enable_if<std::is_same<InType, OutType>::value, AbsFcn<InType, OutType>>::type getAbsFcn()
 {
@@ -31,10 +27,6 @@ static typename std::enable_if<std::is_same<InType, OutType>::value, AbsFcn<InTy
 
 template <typename InType, typename OutType>
 static typename std::enable_if<!std::is_same<InType, OutType>::value, AbsFcn<InType, OutType>>::type
-#else
-template <typename InType, typename OutType>
-static AbsFcn<InType, OutType>
-#endif
 getAbsFcn()
 {
     return [](const InType* in, OutType* out, const size_t num)

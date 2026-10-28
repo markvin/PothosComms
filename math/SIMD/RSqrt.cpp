@@ -1,10 +1,10 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "RSqrt.hpp"
+//One copy per SIMD architecture (PothosGenerateSIMDSources)
+#include <Pothos/Util/XSIMDCopy.hpp>
 
-#include <xsimd/xsimd.hpp>
-#include <Pothos/Util/XSIMDTraits.hpp>
+#include "RSqrt.hpp"
 
 #include <cmath>
 #include <type_traits>
@@ -12,10 +12,6 @@
 // Actually enforce EnableRSqrtSIMD
 #ifdef _MSC_VER
 #pragma warning(error: 4667) // no function template defined that matches forced instantiation
-#endif
-
-#if !defined POTHOS_SIMD_NAMESPACE
-#error Must define POTHOS_SIMD_NAMESPACE to build this file
 #endif
 
 namespace PothosCommsSIMD { namespace POTHOS_SIMD_NAMESPACE {
@@ -31,7 +27,7 @@ namespace detail
         const T* inPtr = in;
         T* outPtr = out;
 
-        static const auto OneReg  = xsimd::batch<T, simdSize>(T(1));
+        static const auto OneReg  = xsimd::batch<T>(T(1));
 
         for (size_t frameIndex = 0; frameIndex < numSIMDFrames; ++frameIndex)
         {

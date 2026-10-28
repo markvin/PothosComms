@@ -91,3 +91,7 @@ target_include_directories(MathBlocks PRIVATE
 if(MSVC)
     target_compile_options(MathBlocks PRIVATE /bigobj) #arithmetic is too large in debug mode
 endif()
+
+#the SIMD kernels, chosen at run time (the dispatcher has a scalar fallback)
+add_subdirectory(SIMD)
+target_link_libraries(MathBlocks PRIVATE CommsMathSIMD)

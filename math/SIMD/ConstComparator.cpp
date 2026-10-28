@@ -1,8 +1,8 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <xsimd/xsimd.hpp>
-#include <Pothos/Util/XSIMDTraits.hpp>
+//One copy per SIMD architecture (PothosGenerateSIMDSources)
+#include <Pothos/Util/XSIMDCopy.hpp>
 
 #include <complex>
 #include <type_traits>
@@ -10,10 +10,6 @@
 // Actually enforce IsSIMDConstComparatorSupported
 #ifdef _MSC_VER
 #pragma warning(error: 4667) // no function template defined that matches forced instantiation
-#endif
-
-#if !defined POTHOS_SIMD_NAMESPACE
-#error Must define POTHOS_SIMD_NAMESPACE to build this file
 #endif
 
 namespace PothosCommsSIMD { namespace POTHOS_SIMD_NAMESPACE {
@@ -52,9 +48,9 @@ namespace detail
         const T* inPtr = in; \
         char* outPtr = out; \
  \
-        static const auto ZeroReg = xsimd::batch<T, simdSize>(T(0)); \
-        static const auto OneReg = xsimd::batch<T, simdSize>(T(1)); \
-        const auto valReg = xsimd::batch<T, simdSize>(val); \
+        static const auto ZeroReg = xsimd::batch<T>(T(0)); \
+        static const auto OneReg = xsimd::batch<T>(T(1)); \
+        const auto valReg = xsimd::batch<T>(val); \
  \
         for (size_t frameIndex = 0; frameIndex < numSIMDFrames; ++frameIndex) \
         { \

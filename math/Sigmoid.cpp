@@ -1,9 +1,7 @@
 // Copyright (c) 2021 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
-#ifdef POTHOS_XSIMD
 #include "SIMD/MathBlocks_SIMD.hpp"
-#endif
 
 #include <Pothos/Framework.hpp>
 
@@ -16,29 +14,11 @@
 template <typename Type>
 using SigmoidFcn = void(*)(const Type*, Type*, const size_t);
 
-#ifdef POTHOS_XSIMD
-
 template <typename Type>
 static inline SigmoidFcn<Type> getSigmoidFcn()
 {
     return PothosCommsSIMD::sigmoidDispatch<Type>();
 }
-
-#else
-
-template <typename Type>
-static inline SigmoidFcn<Type> getSigmoidFcn()
-{
-    return [](const Type* in, Type* out, const size_t num)
-    {
-        for (size_t i = 0; i < num; i++)
-        {
-            out[i] = Type(1.0) / (Type(1.0) + std::exp(-in[i]));
-        }
-    };
-}
-
-#endif
 
 /***********************************************************************
  * |PothosDoc Sigmoid
