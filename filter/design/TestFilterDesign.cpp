@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: BSL-1.0
 
 //Compare the filter design code with the reference data from spuce ad08df7.
-//Tolerances are relative to max(1, the largest reference value):
+//Tolerances are relative to the largest finite value of the reference array
+//(1 for an array of zeros), not to 1: IIR b taps can be 1e-7.
+//Tolerances:
 // - 1e-9 for the windows and the FIR types with a closed form: the same
 //   formulas give the same values, except for the order of operations;
 // - 1e-6 for Remez and the Remez estimates: the iterative exchange
@@ -45,18 +47,19 @@ bool sameValue(const double x, const double ref, const double tol)
     return std::abs(x - ref) <= tol;
 }
 
+//the largest finite absolute value, 1 when there is none
 double largest(std::span<const double> ref)
 {
-    double m = 1.0;
+    double m = 0.0;
     for (const auto r : ref) if (std::isfinite(r)) m = std::max(m, std::abs(r));
-    return m;
+    return (m == 0.0) ? 1.0 : m;
 }
 
 double largest(std::span<const std::complex<double>> ref)
 {
-    double m = 1.0;
+    double m = 0.0;
     for (const auto r : ref) if (std::isfinite(std::abs(r))) m = std::max(m, std::abs(r));
-    return m;
+    return (m == 0.0) ? 1.0 : m;
 }
 
 //an empty text if out agrees with ref, else a description of the first difference
@@ -145,13 +148,14 @@ POTHOS_TEST_BLOCK("/comms/tests", test_filter_design_remez_estimate)
     for (const auto &c : Reference::remezEstimateCases)
     {
         const auto label = std::format("transBw {} ripple {} atten {}: ", c.transBw, c.ripple, c.atten);
-        const std::vector<double> out{
-            remezEstimateAtten(c.numTaps, c.transBw, c.ripple),
-            remezEstimateBw(c.numTaps, c.ripple, c.atten),
-            remezEstimateWeight(c.ripple, c.atten)};
-        const std::vector<double> ref{c.estAtten, c.estBw, c.estWeight};
+        //each value relative to itself (they have different scales)
+        const std::vector<double> atten{remezEstimateAtten(c.numTaps, c.transBw, c.ripple)};
+        const std::vector<double> bw{remezEstimateBw(c.numTaps, c.ripple, c.atten)};
+        const std::vector<double> weight{remezEstimateWeight(c.ripple, c.atten)};
         POTHOS_TEST_EQUAL(remezEstimateNumTaps(c.transBw, c.ripple, c.atten), c.estNumTaps);
-        POTHOS_TEST_EQUAL(label + compare(out, ref, 1e-6), label);
+        POTHOS_TEST_EQUAL(label + "atten " + compare(atten, std::vector<double>{c.estAtten}, 1e-6), label + "atten ");
+        POTHOS_TEST_EQUAL(label + "bw " + compare(bw, std::vector<double>{c.estBw}, 1e-6), label + "bw ");
+        POTHOS_TEST_EQUAL(label + "weight " + compare(weight, std::vector<double>{c.estWeight}, 1e-6), label + "weight ");
     }
 }
 
