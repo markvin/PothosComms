@@ -1,10 +1,5 @@
 ########################################################################
-## Comms function library
+# Common DSP functions for the modules
 ########################################################################
-set(SOURCES
-    fxpt_atan2.cpp
-)
-
-add_library(CommsFunctions STATIC ${SOURCES})
-set_property(TARGET CommsFunctions PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+pothos_comms_static_library(CommsFunctions fxpt_atan2.cpp)
 target_include_directories(CommsFunctions PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

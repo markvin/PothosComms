@@ -1,20 +1,7 @@
 ########################################################################
-## Feature registration
-########################################################################
-cmake_dependent_option(ENABLE_COMMS_MATH "Enable Pothos Comms.Math component" ON "ENABLE_COMMS" OFF)
-add_feature_info("  Math" ENABLE_COMMS_MATH "Mathematical operators for sample streams")
-if (NOT ENABLE_COMMS_MATH)
-    return()
-endif()
-
-########################################################################
 # Math blocks module
 ########################################################################
-if(MSVC)
-    add_definitions(/bigobj) #arithmetic too large in debug mode
-endif(MSVC)
-
-# exp10 and exp10f are GNU extensions, so we know MSVC won't have them.
+#exp10 and exp10f are GNU extensions, MSVC does not have them
 if(NOT MSVC)
     include(CheckSymbolExists)
     set(CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
@@ -22,16 +9,9 @@ if(NOT MSVC)
     check_symbol_exists(exp10f "math.h" HAVE_EXP10F)
     check_symbol_exists(exp10 "math.h" HAVE_EXP10)
 endif()
+configure_file(Exp10.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/Exp10.hpp)
 
-configure_file(
-    Exp10.hpp.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Exp10.hpp)
-
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR})
-
-POTHOS_MODULE_UTIL(
+pothos_comms_module(
     TARGET MathBlocks
     SOURCES
         Abs.cpp
@@ -75,12 +55,39 @@ POTHOS_MODULE_UTIL(
         TestModF.cpp
     LIBRARIES
         CommsFunctions
-        CommsTests
-    DESTINATION comms
-    ENABLE_DOCS
+    TESTS
+        test_beta
+        test_conjugate
+        test_trigonometric
+        test_gamma
+        test_modf
+        test_abs
+        test_scale
+        test_sinc
+        test_rotate
+        test_arithmetic
+        test_arithmetic_feedback
+        test_inline_buffer
+        test_const_arithmetic
+        test_log
+        test_log2
+        test_log10
+        test_log1p
+        test_angle
+        test_comparator
+        test_const_comparator
+        test_sigmoid
+        test_rsqrt
+        test_exp
+        test_exp2
+        test_exp10
+        test_expm1
+        test_pow_root
+        test_erf
 )
-
-if(xsimd_FOUND)
-    add_subdirectory(SIMD)
-    target_link_libraries(MathBlocks PRIVATE CommsMathSIMD)
+target_include_directories(MathBlocks PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR})
+if(MSVC)
+    target_compile_options(MathBlocks PRIVATE /bigobj) #arithmetic is too large in debug mode
 endif()

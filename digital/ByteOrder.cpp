@@ -6,7 +6,7 @@
 #include <Pothos/Exception.hpp>
 #include <Pothos/Framework.hpp>
 
-#include <Poco/Platform.h>
+#include <bit>
 
 #include <algorithm>
 #include <complex>
@@ -29,27 +29,33 @@ static inline ByteOrderFcn<T> getFlipBytesFcn()
 template <typename T>
 static inline ByteOrderFcn<T> getBigEndianFcn()
 {
-#if defined(POCO_ARCH_BIGENDIAN)
-    return [](const T* in, T* out, size_t numElements)
+    if constexpr (std::endian::native == std::endian::big)
     {
-        std::memcpy(out, in, (numElements * sizeof(T)));
-    };
-#else
-    return getFlipBytesFcn<T>();
-#endif
+        return [](const T* in, T* out, size_t numElements)
+        {
+            std::memcpy(out, in, (numElements * sizeof(T)));
+        };
+    }
+    else
+    {
+        return getFlipBytesFcn<T>();
+    }
 }
 
 template <typename T>
 static inline ByteOrderFcn<T> getLittleEndianFcn()
 {
-#if defined(POCO_ARCH_BIGENDIAN)
-    return getFlipBytesFcn<T>();
-#else
-    return [](const T* in, T* out, size_t numElements)
+    if constexpr (std::endian::native == std::endian::big)
     {
-        std::memcpy(out, in, (numElements * sizeof(T)));
-    };
-#endif
+        return getFlipBytesFcn<T>();
+    }
+    else
+    {
+        return [](const T* in, T* out, size_t numElements)
+        {
+            std::memcpy(out, in, (numElements * sizeof(T)));
+        };
+    }
 }
 
 template <typename T>

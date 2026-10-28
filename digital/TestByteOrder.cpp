@@ -6,7 +6,7 @@
 #include <Pothos/Framework.hpp>
 #include <Pothos/Testing.hpp>
 
-#include <Poco/Platform.h>
+#include <bit>
 
 #include <complex>
 #include <cstring>
@@ -279,11 +279,7 @@ static void testBigEndian(const Pothos::Proxy& byteOrder)
 
     blockTest<T>(
        byteOrder,
-#if defined(POCO_ARCH_BIGENDIAN)
-       false /*expectSwap*/
-#else
-       true /*expectSwap*/
-#endif
+       std::endian::native != std::endian::big /*expectSwap*/
        );
 }
 
@@ -296,11 +292,7 @@ static void testLittleEndian(const Pothos::Proxy& byteOrder)
 
     blockTest<T>(
        byteOrder,
-#if defined(POCO_ARCH_BIGENDIAN)
-       true /*expectSwap*/
-#else
-       false /*expectSwap*/
-#endif
+       std::endian::native == std::endian::big /*expectSwap*/
        );
 }
 
@@ -313,11 +305,7 @@ static void testHostOrder(const Pothos::Proxy& byteOrder)
 
     blockTest<T>(
        byteOrder,
-#if defined(POCO_ARCH_BIGENDIAN)
-       false /*expectSwap*/
-#else
-       true /*expectSwap*/
-#endif
+       std::endian::native != std::endian::big /*expectSwap*/
        );
 }
 
@@ -330,11 +318,7 @@ static void testNetworkOrder(const Pothos::Proxy& byteOrder)
 
     blockTest<T>(
        byteOrder,
-#if defined(POCO_ARCH_BIGENDIAN)
-       false /*expectSwap*/
-#else
-       true /*expectSwap*/
-#endif
+       std::endian::native != std::endian::big /*expectSwap*/
        );
 }
 

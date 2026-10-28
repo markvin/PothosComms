@@ -1,23 +1,15 @@
 ########################################################################
-## Feature registration
+# MAC layer and packet protocol blocks module
 ########################################################################
-cmake_dependent_option(ENABLE_COMMS_MAC "Enable Pothos Comms.MAC component" ON "ENABLE_COMMS;JSON_HPP_INCLUDE_DIR" OFF)
-add_feature_info("  MAC" ENABLE_COMMS_MAC "MAC layer and packet protocol blocks")
-if (NOT ENABLE_COMMS_MAC)
-    return()
-endif()
-
-########################################################################
-# MAC blocks module
-########################################################################
-include_directories(${JSON_HPP_INCLUDE_DIR})
-POTHOS_MODULE_UTIL(
+pothos_comms_module(
     TARGET MacBlocks
     SOURCES
         SimpleMac.cpp
         TestSimpleMac.cpp
         SimpleLlc.cpp
         TestSimpleLlc.cpp
-    DESTINATION comms
-    ENABLE_DOCS
+    TESTS
+        test_simple_llc
+        test_simple_llc_harsh
+        test_simple_mac
 )

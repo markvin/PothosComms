@@ -7,7 +7,7 @@
 #include <Pothos/Testing.hpp>
 #include <Pothos/Proxy.hpp>
 
-#include <Poco/Random.h>
+#include <random>
 
 #include <cmath>
 #include <iostream>
@@ -15,7 +15,19 @@
 
 constexpr size_t bufferLen = 150; // Long enough for any SIMD frame, plus some manual operations
 
-static Poco::Random rng;
+static std::mt19937 rng{std::random_device{}()};
+
+//a random integer in [0, n)
+static unsigned rngNext(unsigned n)
+{
+    return std::uniform_int_distribution<unsigned>(0, n-1)(rng);
+}
+
+//a random float in [0, 1]
+static float rngNextFloat()
+{
+    return std::uniform_real_distribution<float>(0.0f, 1.0f)(rng);
+}
 
 template <typename Type>
 static void getTestValues(
@@ -30,7 +42,7 @@ static void getTestValues(
     for (size_t elem = 0; elem < bufferLen; ++elem)
     {
         // nextFloat() returns a value between 0-1
-        pInputs->as<Type*>()[elem] = Type(rng.nextFloat() * rng.next(1000000));
+        pInputs->as<Type*>()[elem] = Type(rngNextFloat() * rngNext(1000000));
         pExpectedFractionalOutputs->as<Type*>()[elem] = std::modf(
             pInputs->as<const Type*>()[elem],
             &pExpectedIntegralOutputs->as<Type*>()[elem]);
