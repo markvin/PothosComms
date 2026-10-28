@@ -6,9 +6,15 @@
 // - 1e-9 for the windows and the FIR types with a closed form: the same
 //   formulas give the same values, except for the order of operations;
 // - 1e-6 for Remez and the Remez estimates: the iterative exchange
-//   algorithm can stop at a slightly different point.
+//   algorithm can stop at a slightly different point;
+// - 1e-6 for the IIR designs: the elliptic functions and the pole/zero
+//   transforms add more rounding steps;
+// - 1e-9 for the IIR filter runs: the taps come from the reference data,
+//   and the filter does the same operations as spuce (for the integer
+//   types, the result is the same integer).
 
 #include "FilterDesign.hpp"
+#include "DirectFormIIR.hpp"
 #include "ReferenceData.hpp"
 
 #include <Pothos/Testing.hpp>
@@ -16,11 +22,13 @@
 #include <algorithm>
 #include <cmath>
 #include <complex>
+#include <cstdint>
 #include <format>
 #include <functional>
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 using namespace PothosComms::FilterDesign;
@@ -142,4 +150,108 @@ POTHOS_TEST_BLOCK("/comms/tests", test_filter_design_remez_estimate)
         POTHOS_TEST_EQUAL(remezEstimateNumTaps(c.transBw, c.ripple, c.atten), c.estNumTaps);
         POTHOS_TEST_EQUAL(label + compare(out, ref, 1e-6), label);
     }
+}
+
+POTHOS_TEST_BLOCK("/comms/tests", test_filter_design_iir)
+{
+    for (const auto &c : Reference::iirCases)
+    {
+        const auto label = std::format("{} {} order {} fcd {}: ", c.type, c.band, c.order, c.fcd);
+        const auto coeffs = designIIR(c.type, c.band, c.order, c.fcd, c.ripple, c.stopAtten, c.centerFreq);
+        POTHOS_TEST_EQUAL(label + (coeffs ? "taps" : "nullopt"), label + (c.unknown ? "nullopt" : "taps"));
+        if (not coeffs) continue;
+        POTHOS_TEST_EQUAL(label + "b " + compare(coeffs->b, c.b, 1e-6), label + "b ");
+        POTHOS_TEST_EQUAL(label + "a " + compare(coeffs->a, c.a, 1e-6), label + "a ");
+    }
+}
+
+namespace {
+
+//the outputs of DirectFormIIR<T> for the input of the reference case, as double
+template <typename T>
+std::vector<double> runIIR(const Reference::IIRRunCase &c, const T in)
+{
+    const auto &design = Reference::iirCases[c.iirCase];
+    std::vector<double> taps(design.b.begin(), design.b.end());
+    taps.insert(taps.end(), design.a.begin(), design.a.end());
+    DirectFormIIR<T> filt;
+    filt.setTaps(taps);
+    std::vector<double> out;
+    for (int n = 0; n < 64; n++) out.push_back(double(filt.clock((n == 0 or c.input == "step") ? in : T(0))));
+    return out;
+}
+
+template <typename T>
+std::vector<std::complex<double>> runIIR(const Reference::IIRRunCase &c, const std::complex<T> in)
+{
+    const auto &design = Reference::iirCases[c.iirCase];
+    std::vector<double> taps(design.b.begin(), design.b.end());
+    taps.insert(taps.end(), design.a.begin(), design.a.end());
+    DirectFormIIR<std::complex<T>> filt;
+    filt.setTaps(taps);
+    std::vector<std::complex<double>> out;
+    for (int n = 0; n < 64; n++)
+    {
+        const auto y = filt.clock((n == 0 or c.input == "step") ? in : std::complex<T>(0, 0));
+        out.emplace_back(double(y.real()), double(y.imag()));
+    }
+    return out;
+}
+
+//compare the real and the complex run of type T with the reference case
+template <typename T>
+void checkIIRRun(const Reference::IIRRunCase &c)
+{
+    const auto label = std::format("iirCases[{}] {} {}: ", c.iirCase, c.input, c.type);
+    const T x = std::is_integral_v<T> ? T(50) : T(1);
+    POTHOS_TEST_EQUAL(label + compare(runIIR<T>(c, x), c.outReal, 1e-9), label);
+    POTHOS_TEST_EQUAL(label + compare(runIIR<T>(c, std::complex<T>(x, T(x/2))), c.outComplex, 1e-9), label);
+}
+
+} //namespace
+
+POTHOS_TEST_BLOCK("/comms/tests", test_filter_design_iir_run)
+{
+    for (const auto &c : Reference::iirRunCases)
+    {
+        if (c.type == "double") checkIIRRun<double>(c);
+        else if (c.type == "float") checkIIRRun<float>(c);
+        else if (c.type == "int64") checkIIRRun<std::int64_t>(c);
+        else if (c.type == "int32") checkIIRRun<std::int32_t>(c);
+        else if (c.type == "int16") checkIIRRun<std::int16_t>(c);
+        else if (c.type == "int8") checkIIRRun<std::int8_t>(c);
+        else POTHOS_TEST_EQUAL(c.type, "a known type");
+    }
+}
+
+POTHOS_TEST_BLOCK("/comms/tests", test_filter_design_iir_taps)
+{
+    //POTHOS_TEST_EQUAL can evaluate its arguments more than one time:
+    //keep the outputs of clock() in variables
+    DirectFormIIR<double> f;
+    POTHOS_TEST_THROWS(f.setTaps(std::vector<double>{}), std::invalid_argument);
+    POTHOS_TEST_THROWS(f.setTaps(std::vector<double>{1.0}), std::invalid_argument);
+
+    //2 taps: b = {0.5}, no feedback
+    f.setTaps(std::vector<double>{0.5, 1.0});
+    const double y = f.clock(2.0);
+    POTHOS_TEST_EQUAL(y, 1.0);
+    POTHOS_TEST_EQUAL(f.feedforward().size(), 1u);
+    POTHOS_TEST_EQUAL(f.feedback().size(), 0u);
+
+    //odd count: b = {1, 0}, feedback = {0.5}, the last tap (9) is not used
+    f.setTaps(std::vector<double>{1.0, 0.0, 1.0, -0.5, 9.0});
+    const double y0 = f.clock(1.0);
+    const double y1 = f.clock(0.0);
+    const double y2 = f.clock(0.0);
+    POTHOS_TEST_EQUAL(y0, 1.0);
+    POTHOS_TEST_EQUAL(y1, 0.5);
+    POTHOS_TEST_EQUAL(y2, 0.25);
+    POTHOS_TEST_EQUAL(f.feedback().size(), 1u);
+    POTHOS_TEST_EQUAL(f.feedback()[0], 0.5);
+
+    //reset clears the history
+    f.reset();
+    const double y3 = f.clock(0.0);
+    POTHOS_TEST_EQUAL(y3, 0.0);
 }

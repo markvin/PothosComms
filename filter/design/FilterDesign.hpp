@@ -10,6 +10,7 @@
 
 #include <complex>
 #include <cstddef>
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -54,5 +55,28 @@ double remezEstimateBw(std::size_t numTaps, double ripple, double atten);
 
 //! The Remez stop band weight for a pass band ripple (dB) and a stop band attenuation (dB)
 double remezEstimateWeight(double passRippleDb, double stopAttenDb);
+
+//! IIR filter coefficients: the feedforward taps b and the feedback taps a (a[0] = 1)
+struct IIRCoeffs
+{
+    std::vector<double> b, a;
+};
+
+/*!
+ * IIR filter design (spuce design_iir, then iir_coeff::get_b and get_a).
+ * \param type butterworth, chebyshev, chebyshev2 or elliptic
+ * \param band LOW_PASS, HIGH_PASS, BAND_PASS or BAND_STOP
+ * \param order the order of the low pass prototype (band pass and band stop double it)
+ * \param fcd the cutoff frequency (low pass, high pass) or the half bandwidth
+ * (band pass, band stop), normalized to the sample rate
+ * \param ripple the pass band ripple in dB (chebyshev, elliptic)
+ * \param stopAtten the stop band attenuation in dB (chebyshev2, elliptic)
+ * \param centerFreq the center frequency of band pass and band stop
+ * \return nullopt for an unknown type or band (spuce wrote a message and
+ * gave zero taps or a low pass)
+ */
+std::optional<IIRCoeffs> designIIR(std::string_view type, std::string_view band,
+    int order, double fcd, double ripple = 0.1, double stopAtten = 60.0,
+    double centerFreq = 0.25);
 
 } //namespace PothosComms::FilterDesign

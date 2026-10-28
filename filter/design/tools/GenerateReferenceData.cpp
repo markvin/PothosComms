@@ -15,6 +15,7 @@
 #include <cmath>
 #include <complex>
 #include <cstddef>
+#include <cstdint>
 #include <format>
 #include <functional>
 #include <iostream>
@@ -22,6 +23,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace {
@@ -302,7 +304,22 @@ std::vector<double> widen(const std::vector<T> &x)
 template <typename T>
 std::vector<std::complex<double>> widen(const std::vector<std::complex<T>> &x)
 {
-    return std::vector<std::complex<double>>(x.begin(), x.end());
+    std::vector<std::complex<double>> out;
+    for (const auto &v : x) out.emplace_back(double(v.real()), double(v.imag()));
+    return out;
+}
+
+//one run case for the real type T and std::complex<T>; integer types get a
+//larger input (the outputs are truncated to T)
+template <typename T>
+void addIIRRunCase(const std::size_t i, const std::string &typeName, const bool step)
+{
+    const auto &d = iirDesigns[i];
+    const T amplitude = std::is_integral_v<T> ? T(50) : T(1);
+    iirRunCases.push_back(std::format("    IIRRunCase{{{}, {}, {}, {}, {}}},\n",
+        i, quoted(step ? "step" : "impulse"), quoted(typeName),
+        realArray(widen(runIIR<T>(d, amplitude, step))),
+        complexArray(widen(runIIR<std::complex<T>>(d, {amplitude, T(amplitude/2)}, step)))));
 }
 
 void makeIIRRunCases()
@@ -313,13 +330,13 @@ void makeIIRRunCases()
         if (d.band != "LOW_PASS" or d.fcd != 0.2 or (d.order != 2 and d.order != 5)) continue;
         for (const bool step : {false, true})
         {
-            const std::string input = step ? "step" : "impulse";
-            iirRunCases.push_back(std::format("    IIRRunCase{{{}, {}, false, {}, {}}},\n",
-                i, quoted(input), realArray(runIIR<double>(d, 1.0, step)),
-                complexArray(runIIR<std::complex<double>>(d, {1.0, 0.5}, step))));
-            iirRunCases.push_back(std::format("    IIRRunCase{{{}, {}, true, {}, {}}},\n",
-                i, quoted(input), realArray(widen(runIIR<float>(d, 1.0f, step))),
-                complexArray(widen(runIIR<std::complex<float>>(d, {1.0f, 0.5f}, step)))));
+            //the types of the IIRFilter block
+            addIIRRunCase<double>(i, "double", step);
+            addIIRRunCase<float>(i, "float", step);
+            addIIRRunCase<std::int64_t>(i, "int64", step);
+            addIIRRunCase<std::int32_t>(i, "int32", step);
+            addIIRRunCase<std::int16_t>(i, "int16", step);
+            addIIRRunCase<std::int8_t>(i, "int8", step);
         }
     }
 }
@@ -400,14 +417,15 @@ struct IIRCase
     bool unknown; //spuce wrote "unknown type" or "unsupported band" to std::cout
 };
 
-//iir_df<T, double> with set_taps(b then a) of iirCases[iirCase], 64 output samples.
-//Input: 1 (real) and (1, 0.5) (complex) at n = 0 (impulse) or at all n (step).
-//singlePrecision: T is float and std::complex<float>, else double and std::complex<double>.
+//iir_df<T, double> and iir_df<std::complex<T>, double> with set_taps(b then a)
+//of iirCases[iirCase], 64 output samples. type: T (double, float, int64,
+//int32, int16 or int8). Input: x (real) and (x, x/2) (complex) at n = 0
+//(impulse) or at all n (step); x = 1, or 50 for the integer types.
 struct IIRRunCase
 {
     std::size_t iirCase;
     std::string_view input;
-    bool singlePrecision;
+    std::string_view type;
     std::span<const double> outReal;
     std::span<const std::complex<double>> outComplex;
 };
