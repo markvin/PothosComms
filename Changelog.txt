@@ -1,8 +1,9 @@
 This this the changelog file for the Pothos Comms toolkit.
 
-Release 0.4.0 (pending)
+Release 0.4.0 (2026-10-31)
 ==========================
 
+- Needs the Pothos core 2.0.0 (the pothos2 line, ABI 2.0-0)
 - XSIMD implementation of various blocks
 - Port to the pothos2 core: no Poco, xsimd is required
 - Dependencies (nlohmann_json, xsimd) through find_package,
