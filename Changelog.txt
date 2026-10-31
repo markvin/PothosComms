@@ -12,6 +12,7 @@ Release 0.4.0 (pending)
 - IIRFilter: setTaps gives an error for 1 tap
 - IIRDesigner: an unknown IIR type or band type gives an error
 - FIRDesigner: Remez band edges that spuce did not support give an error
+- The self-tests unset the POTHOS_* variables of a developer shell
 
 New blocks:
 
